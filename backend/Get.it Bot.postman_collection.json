@@ -1,0 +1,67 @@
+{
+	"info": {
+		"_postman_id": "ff36061a-5fad-4ebc-aff4-810914cfd3f5",
+		"name": "Get.it Bot",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "27854245",
+		"_collection_link": "https://supermario-developers.postman.co/workspace/Team-Workspace~463bc030-aafe-4874-8ebb-b128f5dd55f7/collection/27854245-ff36061a-5fad-4ebc-aff4-810914cfd3f5?action=share&source=collection_link&creator=27854245"
+	},
+	"item": [
+		{
+			"name": "Execute Re-post Bot",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"username\": \"giyiy54774@bmixr.com\",\r\n  \"password\": \"@Waqas12345\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/run-script",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"run-script"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Execute New Post Bot",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"username\": \"dokiwa7014@perceint.com\",\r\n  \"password\": \"@Waqas12345\",\r\n  \"jobData\": {\r\n    \"title\": \"Software Engineer Test\",\r\n    \"description\": \"Once enhanced, you will have a more engaging and unique posting, increasing the number of applicants and improving search engine visibility. Our enhancing process may adjust both the job description and job title based on where we see the biggest areas for improvement.\",\r\n    \"employeesType\": \"In office only\",\r\n    \"country\": \"United States\",\r\n    \"postalCode\": \"10038\",\r\n    \"employementType\": \"Contractor\",\r\n    \"salaryType\": \"Salary Range\",\r\n    \"salaryFrom\": \"10000\",\r\n    \"salaryTo\": \"20000\",\r\n    \"salaryTimeframe\": \"Per Year\",\r\n    \"currency\": \"USD\",\r\n    \"educationLevel\": \"Bachelor's degree\",\r\n    \"experience\": \"3+ years of experience in software development...\",\r\n    \"qualifications\": \"Strong knowledge of JavaScript, Node.js, and React...\",\r\n    \"skills\": \"JavaScript, React, Node.js, SQL\",\r\n    \"responsibilities\": \"Develop and maintain web applications...\",\r\n    \"jobExpire\": \"No\",\r\n    \"receiveApplications\": \"Send applicants to a URL\",\r\n    \"applicationURL\": \"https://www.google.com/\",\r\n    \"notificationEmail\": \"johndoe@gmail.com\",\r\n    \"enhanceWithChatGPT\": \"Yes\"\r\n  }\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5000/new-post",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"new-post"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
