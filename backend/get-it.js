@@ -14,6 +14,7 @@ puppeteer.use(StealthPlugin());
 
 const app = express();
 const port = process.env.PORT || 3000;
+const ipA = process.env.IP || "http://localhost";
 
 app.use(cors()); // Enable CORS
 app.use(bodyParser.json());
@@ -483,5 +484,5 @@ app.post("/repost-job", async (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
+  console.log(`Server is running on ${ipA}:${port}`);
 });
