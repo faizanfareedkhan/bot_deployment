@@ -28,10 +28,30 @@ app.post("/repost-job", async (req, res) => {
 
   try {
     // Launch a browser instance
-    const browser = await puppeteer.launch({ headless: true }); // Set headless to false for debugging
+    // const browser = await puppeteer.launch({ headless: true }); // Set headless to false for debugging
+    // const page = await browser.newPage();
+    // await page.setUserAgent(
+    //   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.6998.35  (Official Build) (64-bit) Safari/537.36"
+    // );
+
+    // await page.setExtraHTTPHeaders({
+    //   "Accept-Language": "en-US,en;q=0.9",
+    // });
+
+    const browser = await puppeteer.launch({
+      headless: "new", // Change to "false" if debugging
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-gpu",
+        "--disable-dev-shm-usage",
+        "--disable-software-rasterizer",
+      ],
+    });
+
     const page = await browser.newPage();
     await page.setUserAgent(
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.6998.35  (Official Build) (64-bit) Safari/537.36"
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.6998.35 Safari/537.36"
     );
 
     await page.setExtraHTTPHeaders({
