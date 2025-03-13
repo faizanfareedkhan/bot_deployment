@@ -115,27 +115,6 @@ export default function App() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               {/* Email */}
-              {/* <FormField
-                control={form.control}
-                name="email"
-                autocomplete="email"
-                type="email"
-                id="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-black">Email</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="email"
-                        placeholder="example@mail.com"
-                        {...field}
-                        className="bg-white text-black border-gray-300 focus:border-black focus:ring-black"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              /> */}
               <FormField
                 control={form.control}
                 name="email"

@@ -1,26 +1,19 @@
-// const express = require("express");
-// const bodyParser = require("body-parser");
-// const puppeteer = require("puppeteer-extra");
-// const StealthPlugin = require("puppeteer-extra-plugin-stealth");
-// const XLSX = require("xlsx");
-
-// puppeteer.use(StealthPlugin());
-
-// const app = express();
-// const port = 3000;
-
-// app.use(bodyParser.json());
 const express = require("express");
+const dotenv = require("dotenv");
 const bodyParser = require("body-parser");
 const puppeteer = require("puppeteer-extra");
 const StealthPlugin = require("puppeteer-extra-plugin-stealth");
 const XLSX = require("xlsx");
 const cors = require("cors");
 
+dotenv.config({
+  path: "./config.env",
+});
+
 puppeteer.use(StealthPlugin());
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 app.use(cors()); // Enable CORS
 app.use(bodyParser.json());
@@ -274,27 +267,6 @@ app.post("/repost-job", async (req, res) => {
           }
 
           // Function to handle clicking the Post button
-          // async function setExpiryOption(expiryOption) {
-          //   console.log("Setting the expiry radio button...");
-
-          //   // Select the radio button wrapper directly
-          //   const radioSelector = expiryOption
-          //     ? ".v-radio:nth-of-type(2) .v-input--selection-controls__input"
-          //     : ".v-radio:nth-of-type(1) .v-input--selection-controls__input";
-
-          //   // Ensure the element is in the viewport before clicking
-          //   const element = await page.$(radioSelector);
-          //   if (!element) {
-          //     console.error("Radio button not found:", radioSelector);
-          //     return;
-          //   }
-
-          //   await element.hover(); // Hover first in case it's not in view
-          //   await element.click(); // Click the radio button
-
-          //   console.log(`Clicked radio button: ${expiryOption ? "Yes" : "No"}`);
-          // }
-
           async function setExpiryOption(expiryOption) {
             console.log("Setting the expiry radio button...");
 
