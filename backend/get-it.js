@@ -5,6 +5,8 @@ const puppeteer = require("puppeteer-extra");
 const StealthPlugin = require("puppeteer-extra-plugin-stealth");
 const XLSX = require("xlsx");
 const cors = require("cors");
+const fs = require("fs");
+const path = require("path");
 
 dotenv.config({
   path: "./config.env",
@@ -18,40 +20,76 @@ const ipA = process.env.IP || "http://localhost";
 
 app.use(cors()); // Enable CORS
 app.use(bodyParser.json());
+const logDir = path.join(__dirname, "logs"); // ✅ Define logDir before using it
+
+// Track last sent log index for each timestamp
+const lastSentLogIndex = new Map();
+
+app.get("/logs/:timestamp", (req, res) => {
+  const { timestamp } = req.params;
+  const logFile = path.join(logDir, `${timestamp}.json`);
+
+  try {
+    if (!fs.existsSync(logFile)) {
+      return res.json({ logs: [] });
+    }
+
+    const logs = JSON.parse(fs.readFileSync(logFile, "utf-8"));
+    const lastIndex = lastSentLogIndex.get(timestamp) || -1;
+    const newLogs = logs.slice(lastIndex + 1);
+
+    if (newLogs.length > 0) {
+      lastSentLogIndex.set(timestamp, logs.length - 1);
+      res.json({ logs: newLogs });
+    } else {
+      res.json({ logs: [] });
+    }
+  } catch (error) {
+    console.error("Error reading logs:", error);
+    res.json({ logs: [] });
+  }
+});
 
 app.post("/repost-job", async (req, res) => {
-  const { username, password, accountName, expiryOption, zipcodesList } =
-    req.body;
+  const {
+    username,
+    password,
+    accountName,
+    expiryOption,
+    zipcodesList,
+    timeStamp,
+  } = req.body;
+
+  const logFile = path.join(logDir, `${timeStamp}.json`);
+
+  // Initialize log file
+  if (!fs.existsSync(logFile)) {
+    fs.writeFileSync(logFile, JSON.stringify([]));
+  }
+
+  const logActivity = (message) => {
+    try {
+      const logs = JSON.parse(fs.readFileSync(logFile, "utf-8"));
+      logs.push(message);
+      fs.writeFileSync(logFile, JSON.stringify(logs));
+    } catch (error) {
+      console.error("Error logging activity:", error);
+    }
+  };
+
+  logActivity("Starting job reposting process");
+
   if (!username || !password) {
+    logActivity("Error: Username and password are required");
     return res.status(400).send("Username and password are required");
   }
 
   try {
     // Launch a browser instance
-    // const browser = await puppeteer.launch({ headless: true }); // Set headless to false for debugging
-    // const page = await browser.newPage();
-    // await page.setUserAgent(
-    //   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.6998.35  (Official Build) (64-bit) Safari/537.36"
-    // );
-
-    // await page.setExtraHTTPHeaders({
-    //   "Accept-Language": "en-US,en;q=0.9",
-    // });
-
-    const browser = await puppeteer.launch({
-      headless: "new", // Change to "false" if debugging
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-gpu",
-        "--disable-dev-shm-usage",
-        "--disable-software-rasterizer",
-      ],
-    });
-
+    const browser = await puppeteer.launch({ headless: true }); // Set headless to false for debugging
     const page = await browser.newPage();
     await page.setUserAgent(
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.6998.35 Safari/537.36"
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.6998.35  (Official Build) (64-bit) Safari/537.36"
     );
 
     await page.setExtraHTTPHeaders({
@@ -79,7 +117,7 @@ app.post("/repost-job", async (req, res) => {
       // Submit the form
       await page.click('[type="submit"]'); // Replace #submit-button with the actual selector
 
-      console.log("Logged in successfully!");
+      logActivity("Success: User logged in successfully");
 
       // Wait for navigation after form submission
       await page.waitForResponse(
@@ -103,6 +141,8 @@ app.post("/repost-job", async (req, res) => {
         const rows = Array.from(document.querySelectorAll("table tbody tr")); // Select all <tr> elements in the table body
         if (rows.length === 0) {
           console.log("No active job found.");
+          logActivity("error: No job in draft.");
+
           return [];
         }
         return rows.map((row) => {
@@ -125,11 +165,15 @@ app.post("/repost-job", async (req, res) => {
       await new Promise((resolve) => setTimeout(resolve, 10000));
       // Log extracted job listings
       console.log("Job Listings:", jobListings);
+      logActivity("Success: Job Listings:", jobListings);
 
       // Loop through each row and perform action
       for (const job of jobListings) {
         const { sr, title, location, postedOn, status } = job;
         console.log(
+          `Job ${sr}: ${title}, Location: ${location}, Posted on: ${postedOn}, Status: ${status}`
+        );
+        logActivity(
           `Job ${sr}: ${title}, Location: ${location}, Posted on: ${postedOn}, Status: ${status}`
         );
 
@@ -142,6 +186,7 @@ app.post("/repost-job", async (req, res) => {
         const zipcodes = zipcodesList.split(", ");
 
         console.log(`Zipcodes are: ${zipcodes}`);
+        logActivity(`Zipcodes are: ${zipcodes}`);
 
         for (let zipcode of zipcodes) {
           // Click on the action button (three dots)
@@ -155,6 +200,9 @@ app.post("/repost-job", async (req, res) => {
 
           if (matchedJob) {
             console.log(`Performing action for ${zipcode} on job:`, matchedJob);
+            logActivity(
+              `Performing action for ${zipcode} on job: ${matchedJob.location}`
+            );
 
             // Click the respective three-dot button based on the serial number
             await page.evaluate((desiredSerialNumber) => {
@@ -173,10 +221,16 @@ app.post("/repost-job", async (req, res) => {
                 console.log(
                   `Button for serial number ${desiredSerialNumber} not found.`
                 );
+                logActivity(
+                  `Button for serial number ${desiredSerialNumber} not found.`
+                );
               }
             }, desiredSerialNumber);
           } else {
             console.log(
+              `No job found with serial number: ${desiredSerialNumber}`
+            );
+            logActivity(
               `No job found with serial number: ${desiredSerialNumber}`
             );
           }
@@ -209,12 +263,14 @@ app.post("/repost-job", async (req, res) => {
 
           if (!clicked) {
             console.error("Duplicate button not found.");
+            logActivity("Error: Duplicate button not found.");
           }
 
           // Optional: Wait for 10 seconds using a custom timeout
           await new Promise((resolve) => setTimeout(resolve, 10000));
 
           console.log(`Processing job for zipcode: ${zipcode}`);
+          logActivity(`Processing job for zipcode: ${zipcode}`);
 
           // Wait for the job post form to appear with an increased timeout
           await page.waitForSelector(
@@ -239,6 +295,7 @@ app.post("/repost-job", async (req, res) => {
           );
 
           console.log(`Job ${sr} title updated to: ${newTitle}`);
+          logActivity(`Job ${sr} title updated to: ${newTitle}`);
 
           // Function to enter postal code and validate it
           async function enterPostalCode(postalCode) {
@@ -274,6 +331,10 @@ app.post("/repost-job", async (req, res) => {
                 console.log(
                   `Error: "${errorMessage}". ZIP code "${postalCode}" is invalid.`
                 );
+                logActivity(
+                  `Error: "${errorMessage}". ZIP code "${postalCode}" is invalid.`
+                );
+
                 return false; // Postal code is invalid
               }
             } catch (e) {
@@ -281,6 +342,10 @@ app.post("/repost-job", async (req, res) => {
               console.log(
                 `No error message. Zip code "${postalCode}" is valid.`
               );
+              logActivity(
+                `Success: No error message. Zip code "${postalCode}" is valid.`
+              );
+
               return true;
             }
 
@@ -290,6 +355,7 @@ app.post("/repost-job", async (req, res) => {
           // Function to handle clicking the Post button
           async function setExpiryOption(expiryOption) {
             console.log("Setting the expiry radio button...");
+            logActivity("Success: Setting the expiry radio button...");
 
             // Locate all captions
             const captions = await page.$$("p.caption.font-weight-light");
@@ -312,7 +378,9 @@ app.post("/repost-job", async (req, res) => {
             }
 
             if (!targetRadioGroup) {
-              console.error("Radio group not found!");
+              console.error("Error: Radio group not found!");
+              logActivity("Error: Radio group not found!");
+
               return;
             }
 
@@ -326,13 +394,20 @@ app.post("/repost-job", async (req, res) => {
             if (radioButton) {
               await radioButton.click();
               console.log(`Clicked: ${expiryOption ? "Yes" : "No"}`);
+              logActivity(`Clicked: ${expiryOption ? "Yes" : "No"}`);
             } else {
-              console.error("Radio button not found inside the correct group!");
+              console.error(
+                "Error: Radio button not found inside the correct group!"
+              );
+              logActivity(
+                "Error: Radio button not found inside the correct group!"
+              );
             }
           }
 
           async function clickCancelButton() {
             console.log("Clicking the Cancel button...");
+            logActivity("Success: Clicking the Cancel button...");
 
             // Wait for the Cancel button (the span inside the button) to become visible
             await page.waitForSelector(
@@ -367,16 +442,19 @@ app.post("/repost-job", async (req, res) => {
             });
 
             console.log("Cancel button clicked successfully.");
+            logActivity("Success: Cancel button clicked successfully.");
 
             // Navigate to the jobs page after clicking
             await page.goto(finalUrl);
             // await page.goto(accountName);
             console.log(`Job re-posted successfully against "${postalCode}".`);
+            logActivity(`Job re-posted successfully against "${postalCode}".`);
           }
 
           // Function to handle clicking the Post button
           async function clickPostButton() {
             console.log("Clicking the Post button...");
+            logActivity("Success: Clicking the Post button...");
 
             // Optional: Wait for 10 seconds using a custom timeout
             await new Promise((resolve) => setTimeout(resolve, 10000));
@@ -398,6 +476,8 @@ app.post("/repost-job", async (req, res) => {
             });
 
             console.log("Post button clicked successfully.");
+            logActivity("Success: Post button clicked successfully.");
+
             // Optional: Wait for 15 seconds using a custom timeout
             await new Promise((resolve) => setTimeout(resolve, 15000));
             // After posting, check if the success screen is displayed
@@ -415,15 +495,25 @@ app.post("/repost-job", async (req, res) => {
               console.log(
                 `Job re-posted successfully against "${postalCode}".`
               );
+              logActivity(
+                `Success: Job re-posted successfully against "${postalCode}".`
+              );
             } catch (e) {
               console.log(
                 "Success screen not detected. Proceeding to the next iteration."
               );
+              logActivity(
+                "Success screen not detected. Proceeding to the next iteration."
+              );
+
               // Navigate to the jobs page after clicking
               await page.goto(finalUrl);
               // await page.goto(accountName);
               console.log(
                 `Job re-posted successfully against "${postalCode}".`
+              );
+              logActivity(
+                `Success: Job re-posted successfully against "${postalCode}".`
               );
             }
           }
@@ -437,6 +527,10 @@ app.post("/repost-job", async (req, res) => {
               console.log(
                 `Postal code "${postalCode}" is not a valid 5-digit number. Clicking the Cancel button.`
               );
+              logActivity(
+                `Success: Postal code "${postalCode}" is not a valid 5-digit number. Clicking the Cancel button.`
+              );
+
               // await setExpiryDate();
               await clickCancelButton();
               return;
@@ -450,11 +544,19 @@ app.post("/repost-job", async (req, res) => {
               console.log(
                 `Attempt ${attempt + 1}: Validating ZIP code "${postalCode}"...`
               );
+              logActivity(
+                `Success: Attempt ${
+                  attempt + 1
+                }: Validating ZIP code "${postalCode}"...`
+              );
+
               isValid = await enterPostalCode(postalCode);
               attempt++;
 
               if (isValid) {
                 console.log(`ZIP code "${postalCode}" is valid.`);
+                logActivity(`Succes: ZIP code "${postalCode}" is valid.`);
+
                 if (expiryOption === true) {
                   await setExpiryOption(expiryOption);
                 }
@@ -468,12 +570,18 @@ app.post("/repost-job", async (req, res) => {
               console.log(
                 `ZIP code "${postalCode}" is invalid after 3 attempts. Clicking the Cancel button.`
               );
+              logActivity(
+                `Success: ZIP code "${postalCode}" is invalid after 3 attempts. Clicking the Cancel button.`
+              );
+
               await clickCancelButton();
             }
           }
 
           const postalCode = zipcode; // Assuming "zipcode" is defined elsewhere
           console.log(`Setting postal code: "${postalCode}"`);
+          logActivity(`Succes: Setting postal code: "${postalCode}"`);
+
           await handleZipCodeValidation(postalCode);
 
           // Wait for 30 seconds using a custom timeout
@@ -484,21 +592,27 @@ app.post("/repost-job", async (req, res) => {
         // await new Promise((resolve) => setTimeout(resolve, 600000));
 
         console.log(`Job ${sr} is re-posted against each zip code.`);
+        logActivity(`Succes: Job ${sr} is re-posted against each zip code.`);
       }
 
       // Optionally take a screenshot after submission
       // await page.screenshot({ path: 'form-filled.png' });
     } catch (error) {
       console.error("Error:", error.message);
+      logActivity(`Error: ${error.message}`);
     } finally {
       // Close the browser
       console.log(`Bot executed successfully.`);
+      logActivity(`Success: Bot executed successfully.`);
+
       await browser.close();
     }
 
-    res.status(200).send("Script executed successfully");
+    res.status(200).send({ executed: "Script executed successfully" });
   } catch (error) {
     console.error("Error executing script:", error);
+    logActivity(`Error executing script: ${error}`);
+
     res.status(500).send("Error executing script");
   }
 });
