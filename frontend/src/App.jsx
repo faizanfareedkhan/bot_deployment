@@ -21,7 +21,7 @@ import { MultiStepLoader as Loader } from "../src/components/ui/multi-step-loade
 import { IconSquareRoundedX } from "@tabler/icons-react";
 const IP = import.meta.env.VITE_IP || "http://localhost:4000/";
 import "./App.css";
-
+console.log(IP);
 // Validation Schema
 const formSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
@@ -83,7 +83,7 @@ export default function App() {
 
   const fetchLogs = async (timeStamp) => {
     try {
-      const response = await fetch(`${IP}logs/${timeStamp}`);
+      const response = await fetch(`http://${IP}/logs/${timeStamp}`);
       const data = await response.json();
       console.log(data.logs[0]);
       data.logs.map((log) => {
@@ -116,9 +116,10 @@ export default function App() {
 
     // Start polling GET logs **IMMEDIATELY** before POST request completes
     intervalRef.current = setInterval(() => fetchLogs(timeStamp), 2000);
+    console.log(`${IP}/repost-job`);
 
     try {
-      const response = await fetch(`${IP}repost-job`, {
+      const response = await fetch(`http://${IP}/repost-job`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

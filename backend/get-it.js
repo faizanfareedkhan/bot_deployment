@@ -86,7 +86,12 @@ app.post("/repost-job", async (req, res) => {
 
   try {
     // Launch a browser instance
-    const browser = await puppeteer.launch({ headless: true }); // Set headless to false for debugging
+    // const browser = await puppeteer.launch({ headless: true }); // Set headless to false for debugging
+    const browser = await puppeteer.launch({
+      headless: true, // Runs in headless mode
+      args: ["--no-sandbox", "--disable-setuid-sandbox"], // REQUIRED for running as root
+    });
+
     const page = await browser.newPage();
     await page.setUserAgent(
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.6998.35  (Official Build) (64-bit) Safari/537.36"
