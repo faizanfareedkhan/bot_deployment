@@ -88,8 +88,8 @@ app.post("/repost-job", async (req, res) => {
     // Launch a browser instance
     // const browser = await puppeteer.launch({ headless: true }); // Set headless to false for debugging
     const browser = await puppeteer.launch({
-      headless: true, // Runs in headless mode
-      args: ["--no-sandbox", "--disable-setuid-sandbox"], // REQUIRED for running as root
+      headless: "new", // Recommended for Chrome 112+
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
 
     const page = await browser.newPage();

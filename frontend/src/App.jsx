@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { XIcon } from "lucide-react";
 import { MultiStepLoader as Loader } from "../src/components/ui/multi-step-loader";
 import { IconSquareRoundedX } from "@tabler/icons-react";
-const IP = import.meta.env.VITE_IP || "http://localhost:4000/";
+const IP = import.meta.env.VITE_IP || "localhost:4000";
 import "./App.css";
 console.log(IP);
 // Validation Schema

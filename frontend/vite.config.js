@@ -6,6 +6,10 @@ import path from "path";
 
 // https://vite.dev/config/
 export default defineConfig({
+  server: {
+    host: true, // This will allow external access
+    port: 4173,
+  },
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
